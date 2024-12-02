@@ -2,49 +2,37 @@
 
 include("config.php");
 
-if (isset($_POST['simpan'])) {
+if (isset($_POST['daftar'])) {
 
-    $id = $_POST['id'];
-    $nama = $_POST['nama'];
-    $alamat = $_POST['alamat'];
-    $jk = $_POST['jenis_kelamin'];
-    $agama = $_POST['agama'];
-    $sekolah = $_POST['sekolah_asal'];
-    $pegawai = $_POST['pegawai_id'];
+    $nama = mysqli_real_escape_string($db, $_POST['nama']);
+    $alamat = mysqli_real_escape_string($db, $_POST['alamat']);
+    $jk = mysqli_real_escape_string($db, $_POST['jenis_kelamin']);
+    $agama = mysqli_real_escape_string($db, $_POST['agama']);
+    $sekolah = mysqli_real_escape_string($db, $_POST['sekolah_asal']);
+    $pegawai = intval($_POST['pegawai_id']);
 
     $foto = $_FILES['foto']['name'];
     $tmp = $_FILES['foto']['tmp_name'];
-
     $newfoto = date('dmYHis') . $foto;
     $path = "uploadphotos/" . $newfoto;
 
-    $sql = "UPDATE calon_siswa SET 
-                nama = '$nama', 
-                alamat = '$alamat', 
-                jenis_kelamin = '$jk', 
-                agama = '$agama', 
-                sekolah_asal = '$sekolah', 
-                pegawai_id = '$pegawai' 
-            WHERE id = $id";
-
+    $sql = "INSERT INTO calon_siswa (nama, alamat, jenis_kelamin, agama, sekolah_asal, pegawai_id, foto) 
+            VALUES ('$nama', '$alamat', '$jk', '$agama', '$sekolah', '$pegawai', NULL)";
     $query = mysqli_query($db, $sql);
 
     if ($query) {
-        if (!empty($foto)) {
-            if (move_uploaded_file($tmp, $path)) {
-                $sql_update_foto = "UPDATE calon_siswa SET foto = '$newfoto' WHERE id = $id";
-                if (!mysqli_query($db, $sql_update_foto)) {
-                    die("Failed to update photo in the database.");
-                }
-            } else {
-                die("Failed to upload photo.");
+        $last_id = mysqli_insert_id($db);
+
+        if (!empty($foto) && move_uploaded_file($tmp, $path)) {
+            $sql_update_foto = "UPDATE calon_siswa SET foto = '$newfoto' WHERE id = $last_id";
+            if (!mysqli_query($db, $sql_update_foto)) {
+                die("Failed to update photo in the database.");
             }
         }
 
-        header('Location: list-siswa.php');
-        exit;
+        header('Location: index.php?status=sukses');
     } else {
-        die("Changes not saved: " . mysqli_error($db));
+        header('Location: index.php?status=gagal');
     }
 
 } else {
